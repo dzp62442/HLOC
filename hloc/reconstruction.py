@@ -56,12 +56,14 @@ def run_reconstruction(sfm_dir: Path,
                        verbose: bool = False,
                        options: Optional[Dict[str, Any]] = None,
                        ) -> pycolmap.Reconstruction:
-    models_path = sfm_dir / 'models'
+    models_path = sfm_dir / 'models'  # 保存三维重建模型的文件夹
     models_path.mkdir(exist_ok=True, parents=True)
     logger.info('Running 3D reconstruction...')
     if options is None:
         options = {}
     options = {'num_threads': min(multiprocessing.cpu_count(), 16), **options}
+    print("run_reconstruction options:", options)
+    logger.info(options)
     with OutputCapture(verbose):
         with pycolmap.ostream():
             reconstructions = pycolmap.incremental_mapping(
@@ -74,7 +76,7 @@ def run_reconstruction(sfm_dir: Path,
 
     largest_index = None
     largest_num_images = 0
-    for index, rec in tqdm(reconstructions.items()):
+    for index, rec in reconstructions.items():
         num_images = rec.num_reg_images()
         if num_images > largest_num_images:
             largest_index = index
