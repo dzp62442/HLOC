@@ -4,6 +4,7 @@ from typing import Optional, List, Dict, Any
 import multiprocessing
 from pathlib import Path
 import pycolmap
+from tqdm import tqdm
 
 from . import logger
 from .utils.database import COLMAPDatabase
@@ -73,7 +74,7 @@ def run_reconstruction(sfm_dir: Path,
 
     largest_index = None
     largest_num_images = 0
-    for index, rec in reconstructions.items():
+    for index, rec in tqdm(reconstructions.items()):
         num_images = rec.num_reg_images()
         if num_images > largest_num_images:
             largest_index = index
