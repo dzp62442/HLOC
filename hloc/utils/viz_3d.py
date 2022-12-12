@@ -151,7 +151,7 @@ def plot_reconstruction(
         fig: go.Figure,
         rec: pycolmap.Reconstruction,
         max_reproj_error: float = 6.0,
-        color: str = 'rgb(0, 0, 255)',
+        color: str = 'rgb(255, 0, 0)',
         name: Optional[str] = None,
         min_track_length: int = 2,
         points: bool = True,
