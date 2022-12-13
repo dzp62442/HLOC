@@ -251,7 +251,7 @@ def main2(dataset_root_dir: Path,  # 数据集根目录
 
     localizer = QueryLocalizer(reference_sfm, config)
 
-    cameras, rets, poses = {}, {}, {}
+    cameras, poses = {}, {}
     logs = {
         'features': features,
         'matches': matches,
@@ -261,8 +261,7 @@ def main2(dataset_root_dir: Path,  # 数据集根目录
     logger.info('Starting localization...')
     for i, qname in tqdm(enumerate(query_names)):
         if qname not in loc_pairs_dict:  # 查询图像未配对，跳过该图像
-            logger.warning(
-                f'No images retrieved for query image {qname}. Skipping...')
+            logger.warning(f'No images retrieved for query image {qname}. Skipping...')
             continue
         qcam = pycolmap.infer_camera_from_image(dataset_root_dir / qname)
         ref_names = loc_pairs_dict[qname]
@@ -279,8 +278,7 @@ def main2(dataset_root_dir: Path,  # 数据集根目录
             best_cluster = None
             logs_clusters = []
             for i, cluster_ids in enumerate(clusters):
-                ret, log = pose_from_cluster(
-                        localizer, qname, qcam, cluster_ids, features, matches)
+                ret, log = pose_from_cluster(localizer, qname, qcam, cluster_ids, features, matches)
                 if ret['success'] and ret['num_inliers'] > best_inliers:
                     best_cluster = i
                     best_inliers = ret['num_inliers']
@@ -295,9 +293,8 @@ def main2(dataset_root_dir: Path,  # 数据集根目录
                 'covisibility_clustering': covisibility_clustering  # True
             }
         else:  #!目前常用
+            # log['PnP_ret'] 与 ret 相同
             ret, log = pose_from_cluster(localizer, qname, qcam, ref_ids, features, matches)
-            logger.info(f'found {ret["num_inliers"]}/{len(ret["inliers"])} inlier correspondences.')
-            rets[qname] = ret
             cameras[qname] = qcam
             if ret['success']:
                 poses[qname] = pycolmap.Image(qvec=ret['qvec'], tvec=ret['tvec'])
@@ -305,13 +302,14 @@ def main2(dataset_root_dir: Path,  # 数据集根目录
                 closest = reference_sfm.images[ref_ids[0]]
                 poses[qname] = pycolmap.Image(qvec=closest.tvec, tvec=closest.qvec)
             log['covisibility_clustering'] = covisibility_clustering  # False
+            log['inlier_rate'] = f'{ret["num_inliers"]}/{len(ret["inliers"])}'
             logs['loc'][qname] = log
 
     logger.info(f'Localized {len(poses)} / {len(query_names)} images.')
     logger.info(f'Writing poses to {results}...')  # 保存位姿估计结果
     with open(results, 'w') as f:
-        for qname in rets:
-            qvec, tvec = rets[qname]['qvec'], rets[qname]['tvec']
+        for qname in query_names:
+            qvec, tvec = logs['loc'][qname]['PnP_ret']['qvec'], logs['loc'][qname]['PnP_ret']['tvec']
             qvec = ' '.join(map(str, qvec))
             tvec = ' '.join(map(str, tvec))
             f.write(f'{qname} {qvec} {tvec}\n')
@@ -322,7 +320,7 @@ def main2(dataset_root_dir: Path,  # 数据集根目录
         pickle.dump(logs, f)
     logger.info('Done!')
     
-    return poses, cameras, rets, logs
+    return poses, cameras, logs
 
 
 
