@@ -62,12 +62,11 @@ def run_reconstruction(sfm_dir: Path,
     if options is None:
         options = {}
     options = {'num_threads': min(multiprocessing.cpu_count(), 16), **options}
-    print("run_reconstruction options:", options)
-    logger.info(options)
+    logger.info("run_reconstruction options:", options)
     with OutputCapture(verbose):
         with pycolmap.ostream():
-            reconstructions = pycolmap.incremental_mapping(
-                database_path, image_dir, models_path, options=options)
+            #! 进行三维重建，耗时长且无法确定进度
+            reconstructions = pycolmap.incremental_mapping(database_path, image_dir, models_path, options=options)
 
     if len(reconstructions) == 0:
         logger.error('Could not reconstruct any model!')

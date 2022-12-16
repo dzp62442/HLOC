@@ -138,7 +138,8 @@ def main(reference_sfm: Union[Path, pycolmap.Reconstruction],  # pycolmap.Recons
     assert features.exists(), features
     assert matches.exists(), matches
 
-    queries = parse_image_lists(queries, with_intrinsics=False)
+    #! 传入相机内参
+    queries = parse_image_lists(queries, with_intrinsics=True)
     retrieval_dict = parse_retrieval(retrieval)
 
     logger.info('Reading the 3D model...')
@@ -263,6 +264,7 @@ def main2(dataset_root_dir: Path,  # 数据集根目录
         if qname not in loc_pairs_dict:  # 查询图像未配对，跳过该图像
             logger.warning(f'No images retrieved for query image {qname}. Skipping...')
             continue
+        #! 从图像中推断相机内参
         qcam = pycolmap.infer_camera_from_image(dataset_root_dir / qname)
         ref_names = loc_pairs_dict[qname]
         ref_ids = []  # 与查询图像配对的参考图像的ids
