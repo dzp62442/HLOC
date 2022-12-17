@@ -113,7 +113,7 @@ def pose_from_cluster(
                        for i in idxs for j in kp_idx_to_3D[i]]
     log = {
         'db': db_ids,
-        'PnP_ret': ret,
+        'PnP_ret': ret,  # log['PnP_ret'] 就是 ret
         'keypoints_query': kpq[mkp_idxs],
         'points3D_ids': mp3d_ids,
         'points3D_xyz': None,  # we don't log xyz anymore because of file size
@@ -236,12 +236,7 @@ def main2(dataset_root_dir: Path,  # 数据集根目录
 
     assert loc_pairs.exists(), loc_pairs
     assert features.exists(), features
-    assert matches.exists(), matches
-
-    config = {
-    'estimation': {'ransac': {'max_error': 12}},
-    'refinement': {'refine_focal_length': True, 'refine_extra_params': True},
-    }   
+    assert matches.exists(), matches   
 
     loc_pairs_dict = parse_retrieval(loc_pairs)  # 以字典格式存储的查询图像与参考图像的配对
 

@@ -71,12 +71,11 @@ def plot_points(
             size=ps, color=color, line_width=0.0, colorscale=colorscale))
     fig.add_trace(tr)
 
-
 def plot_camera(
         fig: go.Figure,
-        R: np.ndarray,
-        t: np.ndarray,
-        K: np.ndarray,
+        R: np.ndarray,  # image.rotmat().T
+        t: np.ndarray,  # image.projection_center()
+        K: np.ndarray,  # camera.calibration_matrix()
         color: str = 'rgb(0, 0, 255)',
         name: Optional[str] = None,
         legendgroup: Optional[str] = None,
@@ -130,9 +129,9 @@ def plot_camera_colmap(
     """Plot a camera frustum from PyCOLMAP objects"""
     plot_camera(
         fig,
-        image.rotmat().T,
-        image.projection_center(),
-        camera.calibration_matrix(),
+        image.rotmat().T,  # R
+        image.projection_center(),  # t
+        camera.calibration_matrix(),  # K
         name=name or str(image.image_id),
         **kwargs)
 

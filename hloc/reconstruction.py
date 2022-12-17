@@ -30,6 +30,7 @@ def import_images(image_dir: Path,
                   image_list: Optional[List[str]] = None,
                   options: Optional[Dict[str, Any]] = None):
     logger.info('Importing images into the database...')
+    logger.info('Camera mode:', camera_mode)
     if options is None:
         options = {}
     images = list(image_dir.iterdir())
