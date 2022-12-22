@@ -30,7 +30,7 @@ def import_images(image_dir: Path,
                   image_list: Optional[List[str]] = None,
                   options: Optional[Dict[str, Any]] = None):
     logger.info('Importing images into the database...')
-    logger.info('Camera mode:', camera_mode)
+    # logger.info('Camera mode:', camera_mode)
     if options is None:
         options = {}
     images = list(image_dir.iterdir())
@@ -98,7 +98,7 @@ def main(sfm_dir: Path,
          pairs: Path,
          features: Path,
          matches: Path,
-         camera_mode: pycolmap.CameraMode = pycolmap.CameraMode.AUTO,
+         camera_mode: pycolmap.CameraMode = 'AUTO',
          verbose: bool = False,
          skip_geometric_verification: bool = False,
          min_match_score: Optional[float] = None,

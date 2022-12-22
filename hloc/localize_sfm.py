@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 from pathlib import Path
 from collections import defaultdict
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional, Any
 from tqdm import tqdm
 import pickle
 import pycolmap
@@ -232,6 +232,7 @@ def main2(dataset_root_dir: Path,  # 数据集根目录
           results: Path,
           covisibility_clustering: bool = False,
           prepend_camera_name: bool = False,  #?这是啥，有啥用
+          options: Optional[Dict[str, Any]] = {},  # 从图像中推断相机内参时指定相机模型
           config: Dict = None):
 
     assert loc_pairs.exists(), loc_pairs
@@ -260,7 +261,7 @@ def main2(dataset_root_dir: Path,  # 数据集根目录
             logger.warning(f'No images retrieved for query image {qname}. Skipping...')
             continue
         #! 从图像中推断相机内参
-        qcam = pycolmap.infer_camera_from_image(dataset_root_dir / qname)
+        qcam = pycolmap.infer_camera_from_image(dataset_root_dir / qname, options)
         ref_names = loc_pairs_dict[qname]
         ref_ids = []  # 与查询图像配对的参考图像的ids
         for name in ref_names:
