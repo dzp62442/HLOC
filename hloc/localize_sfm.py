@@ -237,7 +237,7 @@ def main2(dataset_root_dir: Path,  # 数据集根目录
 
     assert loc_pairs.exists(), loc_pairs
     assert features.exists(), features
-    assert matches.exists(), matches   
+    assert matches.exists(), matches
 
     loc_pairs_dict = parse_retrieval(loc_pairs)  # 以字典格式存储的查询图像与参考图像的配对
 
@@ -319,17 +319,6 @@ def main2(dataset_root_dir: Path,  # 数据集根目录
     logger.info('Done!')
     
     return poses, cameras, logs
-
-
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':

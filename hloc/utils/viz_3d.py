@@ -167,4 +167,4 @@ def plot_reconstruction(
     if points:
         plot_points(fig, np.array(xyzs), color=color, ps=1, name=name)
     if cameras:
-        plot_cameras(fig, rec, color=color, legendgroup=name, size=cs)
+        plot_cameras(fig, rec, color='rgba(0,255,0,0.5)', legendgroup=name, size=cs)

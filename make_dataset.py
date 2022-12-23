@@ -26,7 +26,7 @@ print(torch.cuda.get_device_name(0))
 my_datasets = ['House11', 'SportsHall', 'SportsHall_Total']  # 11号楼、体育馆
 sfm_dataset = Path('datasets/' + my_datasets[2])  # 用于三维重建的数据集
 
-img_names = [r.relative_to(sfm_dataset).as_posix() for r in sfm_dataset.iterdir()]  # 全部图像相对于数据集根目录的文件名
+img_names = [r.relative_to(sfm_dataset).as_posix() for r in sfm_dataset.rglob("*/*")]  # 全部图像相对于数据集根目录的文件名
 
 reference_imgs = sfm_dataset / 'reference/'  # 参考图像文件夹
 reference_names = [r.relative_to(sfm_dataset).as_posix() for r in reference_imgs.rglob("*/*")]  # 相对于数据集根目录的文件名
