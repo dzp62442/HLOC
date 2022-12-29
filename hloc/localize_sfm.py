@@ -125,7 +125,7 @@ def pose_from_cluster(
 
 def main(reference_sfm: Union[Path, pycolmap.Reconstruction],  # pycolmap.Reconstruction
          queries: Path,  # queries_with_intrinsics.txt
-         retrieval: Path,  # loc_pairs
+         loc_pairs: Path,  # loc_pairs
          features: Path,
          matches: Path,
          results: Path,
@@ -134,46 +134,44 @@ def main(reference_sfm: Union[Path, pycolmap.Reconstruction],  # pycolmap.Recons
          prepend_camera_name: bool = False,
          config: Dict = None):
 
-    assert retrieval.exists(), retrieval
+    assert loc_pairs.exists(), loc_pairs
     assert features.exists(), features
     assert matches.exists(), matches
 
     #! 传入相机内参
     queries = parse_image_lists(queries, with_intrinsics=True)
-    retrieval_dict = parse_retrieval(retrieval)
+    loc_pairs_dict = parse_retrieval(loc_pairs)
 
     logger.info('Reading the 3D model...')
     if not isinstance(reference_sfm, pycolmap.Reconstruction):
         reference_sfm = pycolmap.Reconstruction(reference_sfm)
-    db_name_to_id = {img.name: i for i, img in reference_sfm.images.items()}
+    ref_name_to_id = {img.name: i for i, img in reference_sfm.images.items()}
 
-    config = {"estimation": {"ransac": {"max_error": ransac_thresh}},
-              **(config or {})}
     localizer = QueryLocalizer(reference_sfm, config)
 
-    poses = {}
+    cameras, poses = {}, {}
     logs = {
         'features': features,
         'matches': matches,
-        'retrieval': retrieval,
+        'retrieval': loc_pairs,
         'loc': {},
     }
     logger.info('Starting localization...')
     for qname, qcam in tqdm(queries):
-        if qname not in retrieval_dict:
+        if qname not in loc_pairs_dict:
             logger.warning(
                 f'No images retrieved for query image {qname}. Skipping...')
             continue
-        db_names = retrieval_dict[qname]
-        db_ids = []
-        for n in db_names:
-            if n not in db_name_to_id:
-                logger.warning(f'Image {n} was retrieved but not in database')
+        ref_names = loc_pairs_dict[qname]
+        ref_ids = []
+        for name in ref_names:
+            if name not in ref_name_to_id:
+                logger.warning(f'Image {name} was retrieved but not in database')
                 continue
-            db_ids.append(db_name_to_id[n])
+            ref_ids.append(ref_name_to_id[name])
 
-        if covisibility_clustering:
-            clusters = do_covisibility_clustering(db_ids, reference_sfm)
+        if covisibility_clustering:  #!目前没用过
+            clusters = do_covisibility_clustering(ref_ids, reference_sfm)
             best_inliers = 0
             best_cluster = None
             logs_clusters = []
@@ -188,45 +186,46 @@ def main(reference_sfm: Union[Path, pycolmap.Reconstruction],  # pycolmap.Recons
                 ret = logs_clusters[best_cluster]['PnP_ret']
                 poses[qname] = (ret['qvec'], ret['tvec'])
             logs['loc'][qname] = {
-                'db': db_ids,
+                'ref': ref_ids,
                 'best_cluster': best_cluster,
                 'log_clusters': logs_clusters,
                 'covisibility_clustering': covisibility_clustering,
             }
-        else:
-            ret, log = pose_from_cluster(
-                    localizer, qname, qcam, db_ids, features, matches)
+        else:  #!目前常用
+            # log['PnP_ret'] 与 ret 相同
+            ret, log = pose_from_cluster(localizer, qname, qcam, ref_ids, features, matches)
+            cameras[qname] = qcam
             if ret['success']:
-                poses[qname] = (ret['qvec'], ret['tvec'])
-            else:
-                closest = reference_sfm.images[db_ids[0]]
-                poses[qname] = (closest.qvec, closest.tvec)
+                poses[qname] = pycolmap.Image(qvec=ret['qvec'], tvec=ret['tvec'])
+            else:  # 位姿估计失败，将最相似的配对图像作为查询图像的位姿
+                closest = reference_sfm.images[ref_ids[0]]
+                poses[qname] = pycolmap.Image(qvec=closest.tvec, tvec=closest.qvec)
             log['covisibility_clustering'] = covisibility_clustering
+            log['inlier_rate'] = f'{ret["num_inliers"]}/{len(ret["inliers"])}'
             logs['loc'][qname] = log
 
     logger.info(f'Localized {len(poses)} / {len(queries)} images.')
     logger.info(f'Writing poses to {results}...')
     with open(results, 'w') as f:
-        for q in poses:
-            qvec, tvec = poses[q]
+        for qname, qcam in queries:
+            qvec, tvec = logs['loc'][qname]['PnP_ret']['qvec'], logs['loc'][qname]['PnP_ret']['tvec']
             qvec = ' '.join(map(str, qvec))
             tvec = ' '.join(map(str, tvec))
-            name = q.split('/')[-1]
-            if prepend_camera_name:
-                name = q.split('/')[-2] + '/' + name
-            f.write(f'{name} {qvec} {tvec}\n')
+            f.write(f'{qname} {qvec} {tvec}\n')
 
     logs_path = f'{results}_logs.pkl'
-    logger.info(f'Writing logs to {logs_path}...')
+    logger.info(f'Writing logs to {logs_path}...')  # 保存logs
     with open(logs_path, 'wb') as f:
         pickle.dump(logs, f)
     logger.info('Done!')
+
+    return poses, cameras, logs
 
 
 def main2(dataset_root_dir: Path,  # 数据集根目录
           reference_sfm: Union[Path, pycolmap.Reconstruction],  # pycolmap.Reconstruction实例或路径
           query_names: list,
-          loc_pairs: Path,  # loc_pairs
+          loc_pairs: Path,
           features: Path,
           matches: Path,
           results: Path,

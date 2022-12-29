@@ -119,7 +119,7 @@ confs = {
         },
     },
     # Global descriptors
-    'dir': {
+    'dir': {  # AP-GeM / DIR
         'output': 'global-feats-dir',
         'model': {'name': 'dir'},
         'preprocessing': {'resize_max': 1024},
@@ -129,7 +129,7 @@ confs = {
         'model': {'name': 'netvlad'},
         'preprocessing': {'resize_max': 1024},
     },
-    'openibl': {
+    'openibl': {  # OpenIBL / SFRS
         'output': 'global-feats-openibl',
         'model': {'name': 'openibl'},
         'preprocessing': {'resize_max': 1024},

@@ -3,10 +3,9 @@ from pathlib import Path
 from tqdm import tqdm
 import numpy as np
 import pycolmap
+import cv2
 
 from hloc import logger
-from hloc.utils.io import get_keypoints, get_matches
-from hloc.utils.parsers import parse_image_dict, parse_retrieval
 
 def read_poses_text(paths: Union[Path, list], isAbsolute: bool):
     if not isinstance(paths, list):
@@ -40,10 +39,23 @@ def compute_error(R, t, R_gt, t_gt, nomarlize=True):
         t = t / np.linalg.norm(t)
         t_gt = t_gt / np.linalg.norm(t_gt)
     
-    e_t = np.linalg.norm(-R_gt.T @ t_gt + R.T @ t, axis=0)
-    cos = np.clip((np.trace(np.dot(R_gt.T, R)) - 1) / 2, -1., 1.)
-    e_R = np.rad2deg(np.abs(np.arccos(cos)))
+    #! 以下为 HLoc 的 Cambridge 和 7Scenes 数据集采用的误差定义
+    # e_t = np.linalg.norm(-R_gt.T @ t_gt + R.T @ t, axis=0)
+    # cos = np.clip((np.trace(np.dot(R_gt.T, R)) - 1) / 2, -1., 1.)
+    # e_R = np.rad2deg(np.abs(np.arccos(cos)))
 
+    #! 以下为 DSAC* 中的误差定义
+    e_t = np.linalg.norm(t - t_gt)
+    e_R = np.matmul(R, np.transpose(R_gt))
+    e_R = cv2.Rodrigues(e_R)[0]
+    e_R = np.linalg.norm(e_R) * 180 / np.pi
+
+    '''
+    经测试以上两种误差计算方法 角度误差完全一致
+    平移误差有微小差别 平移误差定位率的差别约为0.5%
+    第二种平移误差计算方法更常见，定位率略高
+    '''
+    
     return e_R, e_t
 
 def evaluate_absolute_poses(prediction: Union[Path, list], ground_truth: Union[Path, list]): 
